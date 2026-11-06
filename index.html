@@ -1,0 +1,1569 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>VidStream - Plataforma Real</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    .snap-y-mandatory { scroll-snap-type: y mandatory; }
+    .snap-start { scroll-snap-align: start; }
+    .hide-scrollbar::-webkit-scrollbar { display: none; }
+    .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    body { background-color: #000000; color: #f8fafc; font-family: system-ui, -apple-system, sans-serif; }
+    
+    .theme-pink { --brand-color: #ec4899; --brand-gradient-from: #db2777; --brand-gradient-to: #f43f5e; }
+    .theme-blue { --brand-color: #3b82f6; --brand-gradient-from: #2563eb; --brand-gradient-to: #06b6d4; }
+    .theme-purple { --brand-color: #a855f7; --brand-gradient-from: #9333ea; --brand-gradient-to: #ec4899; }
+    .theme-green { --brand-color: #10b981; --brand-gradient-from: #059669; --brand-gradient-to: #84cc16; }
+
+    .bg-brand { background-color: var(--brand-color); }
+    .text-brand { color: var(--brand-color); }
+    .border-brand { border-color: var(--brand-color); }
+    .gradient-brand { background-image: linear-gradient(to right, var(--brand-gradient-from), var(--brand-gradient-to)); }
+  </style>
+</head>
+<body class="bg-black text-slate-100 flex flex-col h-[100dvh] overflow-hidden select-none theme-pink" id="app-body">
+
+  <!-- TOP HEADER -->
+  <header class="h-14 border-b border-slate-900 flex items-center justify-between px-3 bg-black/90 backdrop-blur z-30 shrink-0 gap-2">
+    <div class="flex items-center gap-1.5 shrink-0">
+      <div class="w-7 h-7 rounded-full bg-brand flex items-center justify-center font-bold text-white shadow-lg text-xs">V</div>
+      <span class="font-bold text-base tracking-wide text-brand hidden sm:inline">VidStream</span>
+    </div>
+
+    <div class="flex-1 max-w-xs relative">
+      <input type="text" id="search-input" oninput="handleSearch(this.value)" placeholder="Pesquisar edit, @utilizador..." class="w-full bg-slate-900 border border-slate-800 rounded-full pl-8 pr-3 py-1 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-brand transition">
+      <i data-lucide="search" class="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+    </div>
+
+    <div class="flex items-center gap-2 shrink-0">
+      <button onclick="openCreateModal('video')" class="gradient-brand text-white font-medium px-3 py-1 rounded-full text-xs flex items-center gap-1 shadow-md transition active:scale-95">
+        <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i> <span>Criar</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER / VIEWS -->
+  <main id="app-content" class="flex-1 relative overflow-hidden bg-black">
+    
+    <!-- FEED DE VÍDEOS -->
+    <section id="view-feed" class="w-full h-full relative">
+      <div id="video-container" class="w-full h-full overflow-y-scroll snap-y-mandatory hide-scrollbar"></div>
+    </section>
+
+    <!-- MEU PERFIL -->
+    <section id="view-profile" class="w-full h-full overflow-y-auto hide-scrollbar bg-slate-950 hidden p-4 pb-24">
+      <div class="max-w-md mx-auto flex flex-col items-center text-center pt-2 relative">
+        <button onclick="openModal('modal-settings')" class="absolute top-2 right-0 p-2 text-slate-400 hover:text-white bg-slate-900 rounded-full border border-slate-800 transition">
+          <i data-lucide="more-vertical" class="w-5 h-5"></i>
+        </button>
+
+        <div class="relative group mt-2">
+          <img id="profile-avatar" src="" class="w-24 h-24 rounded-full object-cover border-4 border-brand shadow-xl bg-slate-800">
+          <button onclick="triggerAvatarUpload()" class="absolute bottom-0 right-0 bg-brand text-white p-2 rounded-full shadow-lg border-2 border-slate-950 transition">
+            <i data-lucide="camera" class="w-4 h-4"></i>
+          </button>
+          <input type="file" id="input-avatar-file" accept="image/*" class="hidden" onchange="handleAvatarFile(event)">
+        </div>
+
+        <h2 id="profile-name" class="text-xl font-bold mt-3">SemNome</h2>
+        <p id="profile-handle" class="text-xs text-slate-400">@semnome</p>
+        <p id="profile-bio" class="text-sm text-slate-300 mt-2 px-4 max-w-sm">Criador de conteúdo 🚀</p>
+
+        <!-- BOTÃO EDITAR PERFIL -->
+        <button onclick="openEditProfileModal()" class="mt-4 bg-slate-900 hover:bg-slate-800 border border-slate-700 text-white font-bold px-5 py-2 rounded-xl text-xs transition flex items-center gap-2 shadow">
+          <i data-lucide="edit-3" class="w-3.5 h-3.5 text-brand"></i> Editar Perfil
+        </button>
+
+        <div class="flex gap-6 mt-4 py-3 px-6 bg-slate-900/60 rounded-2xl border border-slate-800">
+          <div class="text-center"><span id="profile-following-count" class="font-bold text-slate-100 block">0</span><span class="text-xs text-slate-400">Seguindo</span></div>
+          <div class="text-center"><span id="profile-followers-count" class="font-bold text-slate-100 block">0</span><span class="text-xs text-slate-400">Seguidores</span></div>
+          <div class="text-center"><span id="profile-likes-count" class="font-bold text-slate-100 block">0</span><span class="text-xs text-slate-400">Curtidas</span></div>
+        </div>
+
+        <div class="w-full mt-6">
+          <div class="flex border-b border-slate-900 text-slate-400 font-medium text-xs justify-around mb-3">
+            <button onclick="switchProfileTab('my-videos')" id="tab-btn-my-videos" class="pb-2 border-b-2 border-brand text-brand font-bold">Vídeos</button>
+            <button onclick="switchProfileTab('liked-videos')" id="tab-btn-liked-videos" class="pb-2">Curtidos</button>
+            <button onclick="switchProfileTab('saved-videos')" id="tab-btn-saved-videos" class="pb-2">Salvos</button>
+          </div>
+          <div id="profile-videos-grid" class="grid grid-cols-3 gap-2"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ABA LIVE -->
+    <section id="view-live" class="w-full h-full bg-black hidden relative flex flex-col items-center justify-center p-6 text-center">
+      <div class="w-16 h-16 rounded-full bg-red-600/20 border-2 border-red-500 flex items-center justify-center mb-4 animate-pulse">
+        <i data-lucide="radio" class="w-8 h-8 text-red-500"></i>
+      </div>
+      <h3 class="text-lg font-bold text-white mb-1">Central de Transmissões & Lives</h3>
+      <p class="text-xs text-slate-400 max-w-xs mb-6">Escolha o modo de transmissão com total segurança local:</p>
+      
+      <div class="flex flex-col gap-3 w-full max-w-xs">
+        <button onclick="openCreateModal('live')" class="bg-slate-900 hover:bg-slate-800 border border-slate-800 p-3.5 rounded-xl text-xs font-bold text-white flex items-center gap-3 transition">
+          <i data-lucide="video" class="w-5 h-5 text-brand"></i> Live com a Câmara (Frontal / Traseira)
+        </button>
+        <button onclick="startScreenShareLive()" class="bg-slate-900 hover:bg-slate-800 border border-slate-800 p-3.5 rounded-xl text-xs font-bold text-white flex items-center gap-3 transition">
+          <i data-lucide="monitor" class="w-5 h-5 text-blue-400"></i> Live da Tela (Celular / Jogo)
+        </button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- BARRA DE NAVEGAÇÃO INFERIOR -->
+  <nav class="h-14 border-t border-slate-900 bg-black flex items-center justify-around px-2 z-30 shrink-0">
+    <button onclick="switchTab('feed')" id="nav-feed" class="flex flex-col items-center gap-0.5 text-brand transition"><i data-lucide="compass" class="w-5 h-5"></i><span class="text-[9px]">Início</span></button>
+    <button onclick="switchTab('live')" id="nav-live" class="flex flex-col items-center gap-0.5 text-slate-500 transition"><i data-lucide="radio" class="w-5 h-5"></i><span class="text-[9px]">Live</span></button>
+    <button onclick="openCreateModal('video')" class="gradient-brand p-2.5 rounded-full text-white shadow-lg transform -translate-y-1"><i data-lucide="plus" class="w-5 h-5"></i></button>
+    <button onclick="switchTab('profile')" id="nav-profile" class="flex flex-col items-center gap-0.5 text-slate-500 transition"><i data-lucide="user" class="w-5 h-5"></i><span class="text-[9px]">Perfil</span></button>
+  </nav>
+
+  <!-- MODAL DE EDITAR PERFIL -->
+  <div id="modal-edit-profile" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-sm p-5 relative shadow-2xl space-y-4">
+      <button onclick="closeModal('modal-edit-profile')" class="absolute top-4 right-4 text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+      <h3 class="text-base font-bold text-white">Editar Perfil</h3>
+      
+      <form onsubmit="handleSaveProfile(event)" class="space-y-3 text-left">
+        <div>
+          <label class="text-[11px] text-slate-400 font-semibold block mb-1">Nome</label>
+          <input type="text" id="edit-profile-name" placeholder="O seu nome" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-brand">
+        </div>
+        <div>
+          <label class="text-[11px] text-slate-400 font-semibold block mb-1">Apelido / Handle (@)</label>
+          <input type="text" id="edit-profile-handle" placeholder="@seu_usuario" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-brand">
+        </div>
+        <div>
+          <label class="text-[11px] text-slate-400 font-semibold block mb-1">Biografia</label>
+          <textarea id="edit-profile-bio" rows="2" placeholder="Escreva algo sobre si..." class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-brand"></textarea>
+        </div>
+        <button type="submit" class="w-full gradient-brand text-white font-bold py-2.5 rounded-xl text-xs shadow-lg transition active:scale-95 mt-1">Guardar Alterações</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- PASSO 1: MODAL DE CAPTURA / GRAVAÇÃO -->
+  <div id="modal-create" class="fixed inset-0 bg-black z-50 flex flex-col justify-between hidden">
+    <div class="absolute top-4 left-4 right-4 flex items-center justify-between z-20">
+      <button onclick="closeCreateModal()" class="text-white p-2.5 rounded-full bg-black/60 backdrop-blur"><i data-lucide="x" class="w-5 h-5"></i></button>
+      <div class="flex bg-black/60 backdrop-blur p-1 rounded-full border border-white/10 text-xs font-bold text-slate-300">
+        <button onclick="switchCreateTab('video')" id="create-tab-video" class="px-3 py-1 rounded-full bg-brand text-white transition">Vídeo</button>
+        <button onclick="switchCreateTab('photo')" id="create-tab-photo" class="px-3 py-1 rounded-full transition">Foto</button>
+        <button onclick="switchCreateTab('live')" id="create-tab-live" class="px-3 py-1 rounded-full transition">Live</button>
+      </div>
+      <button onclick="switchCameraFacing()" id="btn-flip-cam" class="text-white p-2.5 rounded-full bg-black/60 backdrop-blur"><i data-lucide="refresh-cw" class="w-5 h-5"></i></button>
+    </div>
+
+    <div class="flex-1 relative bg-black flex items-center justify-center overflow-hidden">
+      <video id="capture-preview" autoplay playsinline muted class="w-full h-full object-cover"></video>
+      <div id="live-indicator" class="absolute top-16 bg-red-600 text-white font-bold text-[10px] px-3 py-1 rounded-full uppercase tracking-wider hidden flex items-center gap-1.5 animate-pulse">
+        <span class="w-2 h-2 rounded-full bg-white"></span> Transmissão de Live Ativa
+      </div>
+    </div>
+
+    <div class="bg-black/95 p-6 pb-8 flex flex-col items-center gap-4 z-20 border-t border-slate-900">
+      <div class="flex items-center justify-around w-full max-w-xs">
+        <label class="w-11 h-11 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center cursor-pointer hover:bg-slate-800 transition">
+          <i data-lucide="image" class="w-5 h-5 text-slate-300"></i>
+          <input type="file" id="post-file" accept="video/*,image/*" class="hidden" onchange="handleFileSelected(event)">
+        </label>
+        <button id="btn-trigger" onclick="triggerAction()" class="w-18 h-18 rounded-full border-4 border-white flex items-center justify-center p-1.5 transition active:scale-95">
+          <div id="trigger-inner" class="w-full h-full bg-red-600 rounded-full transition-all"></div>
+        </button>
+        <button onclick="startScreenShareLive()" class="w-11 h-11 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center text-white hover:bg-slate-800 transition" title="Gravar Tela">
+          <i data-lucide="monitor" class="w-5 h-5 text-blue-400"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PASSO 2: TELA DE EDIÇÃO DE TEXTO NO VÍDEO -->
+  <div id="modal-edit-video" class="fixed inset-0 bg-black z-50 flex flex-col justify-between hidden">
+    <div class="absolute top-4 left-4 right-4 flex items-center justify-between z-30">
+      <button onclick="backToCreateModal()" class="text-white p-2.5 rounded-full bg-black/60 backdrop-blur"><i data-lucide="arrow-left" class="w-5 h-5"></i></button>
+      <span class="text-xs font-bold text-white bg-black/60 px-3 py-1 rounded-full">Adicionar Texto no Vídeo</span>
+      <button onclick="goToFinalPostModal()" class="gradient-brand text-white font-bold px-4 py-1.5 rounded-full text-xs shadow-lg">Avançar</button>
+    </div>
+
+    <div class="flex-1 relative bg-black flex items-center justify-center overflow-hidden">
+      <video id="editor-video-preview" autoplay playsinline loop muted class="w-full h-full object-contain"></video>
+      <div id="overlay-text-display" class="absolute font-bold text-2xl drop-shadow-lg text-center px-4 pointer-events-none transition-all"></div>
+    </div>
+
+    <div class="bg-black/95 p-5 pb-8 flex flex-col gap-3 z-30 border-t border-slate-900">
+      <input type="text" id="video-overlay-input" oninput="updateOverlayText(this.value)" placeholder="Digite o texto para colocar no vídeo..." class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-brand">
+      
+      <div class="flex items-center justify-between px-2">
+        <span class="text-[11px] text-slate-400 font-semibold">Cor do Texto:</span>
+        <div class="flex gap-2">
+          <button onclick="setTextColor('#ffffff')" class="w-6 h-6 rounded-full bg-white border-2 border-slate-700 active:scale-95 transition"></button>
+          <button onclick="setTextColor('#ec4899')" class="w-6 h-6 rounded-full bg-pink-500 border-2 border-slate-700 active:scale-95 transition"></button>
+          <button onclick="setTextColor('#3b82f6')" class="w-6 h-6 rounded-full bg-blue-500 border-2 border-slate-700 active:scale-95 transition"></button>
+          <button onclick="setTextColor('#10b981')" class="w-6 h-6 rounded-full bg-emerald-500 border-2 border-slate-700 active:scale-95 transition"></button>
+          <button onclick="setTextColor('#eab308')" class="w-6 h-6 rounded-full bg-yellow-500 border-2 border-slate-700 active:scale-95 transition"></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PASSO 3: TELA FINAL DE POSTAGEM -->
+  <div id="modal-final-post" class="fixed inset-0 bg-black z-50 flex flex-col justify-between hidden p-4">
+    <div class="flex items-center justify-between pt-2">
+      <button onclick="backToEditorModal()" class="text-white p-2 rounded-full bg-slate-900"><i data-lucide="arrow-left" class="w-5 h-5"></i></button>
+      <h3 class="font-bold text-sm text-white">Detalhes da Publicação</h3>
+      <button onclick="publishFinalVideo()" class="gradient-brand text-white font-bold px-4 py-1.5 rounded-full text-xs shadow-lg">Publicar</button>
+    </div>
+
+    <div class="flex-1 flex flex-col gap-4 py-4 max-w-md mx-auto w-full">
+      <div class="flex gap-3 bg-slate-900/60 p-3 rounded-2xl border border-slate-800">
+        <video id="final-thumb-preview" class="w-20 h-28 object-cover rounded-xl bg-black"></video>
+        <div class="flex-1 flex flex-col justify-center">
+          <span class="text-xs font-bold text-brand">Vídeo Pronto!</span>
+          <span class="text-[10px] text-slate-400 mt-1">O seu vídeo está otimizado para viralizar com segurança local.</span>
+        </div>
+      </div>
+
+      <div class="space-y-1.5">
+        <label class="text-xs text-slate-400 font-semibold block">Legenda Principal (Embaixo)</label>
+        <textarea id="final-caption-input" rows="3" placeholder="Escreva a legenda principal do seu vídeo..." class="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-brand"></textarea>
+      </div>
+
+      <div class="space-y-1.5">
+        <label class="text-xs text-slate-400 font-semibold block">Hashtags para Viralizar (+50% Frequência)</label>
+        <input type="text" id="final-hashtags-input" placeholder="#foryou #viral #gamer #vidstream" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-brand">
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DE COMENTÁRIOS COM LIXEIRA -->
+  <div id="modal-comments" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex justify-end flex-col hidden">
+    <div class="bg-slate-900 border-t border-slate-800 rounded-t-2xl w-full h-3/4 max-w-md mx-auto flex flex-col p-4 relative">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-3 mb-2">
+        <h4 class="font-bold text-sm">Comentários</h4>
+        <button onclick="closeModal('modal-comments')" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <div id="comments-list" class="flex-1 overflow-y-auto space-y-3 py-2 pr-1 text-xs"></div>
+      <form onsubmit="handleAddComment(event)" class="pt-2 border-t border-slate-800 flex items-center gap-2">
+        <input type="text" id="comment-input" placeholder="Comentar..." required class="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+        <button type="submit" class="bg-brand text-white px-4 py-2 rounded-xl font-bold text-xs">Enviar</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL DE CHAT DIRETO -->
+  <div id="modal-chat" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md h-[80vh] flex flex-col p-4 relative shadow-2xl">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-3 mb-2">
+        <div class="flex items-center gap-2">
+          <img id="chat-user-avatar" src="" class="w-8 h-8 rounded-full object-cover border border-brand bg-slate-800">
+          <div>
+            <h4 id="chat-user-name" class="font-bold text-sm text-white">Nome</h4>
+            <span id="chat-user-handle" class="text-[10px] text-slate-400">@handle</span>
+          </div>
+        </div>
+        <button onclick="closeModal('modal-chat')" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+
+      <div id="chat-messages-container" class="flex-1 overflow-y-auto space-y-3 py-2 pr-1 text-xs">
+        <div class="bg-slate-800 p-2.5 rounded-xl max-w-[80%] text-slate-200">
+          Olá! Conversa iniciada com sucesso.
+        </div>
+      </div>
+
+      <form onsubmit="handleSendChatMessage(event)" class="pt-3 border-t border-slate-800 flex items-center gap-2">
+        <input type="text" id="chat-input-message" placeholder="Escreva uma mensagem..." required class="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none">
+        <button type="submit" class="bg-brand text-white px-4 py-2.5 rounded-xl font-bold text-xs">Enviar</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL CONFIGURAÇÕES -->
+  <div id="modal-settings" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 relative shadow-2xl space-y-4">
+      <button onclick="closeModal('modal-settings')" class="absolute top-4 right-4 text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+      <h3 class="text-lg font-bold">Configurações</h3>
+      <div class="space-y-2">
+        <label class="text-xs text-slate-400 font-semibold block">Cor da Plataforma</label>
+        <div class="grid grid-cols-4 gap-2">
+          <button onclick="setTheme('theme-pink')" class="h-10 rounded-xl bg-gradient-to-r from-pink-600 to-rose-500"></button>
+          <button onclick="setTheme('theme-blue')" class="h-10 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500"></button>
+          <button onclick="setTheme('theme-purple')" class="h-10 rounded-xl bg-gradient-to-r from-purple-600 to-pink-500"></button>
+          <button onclick="setTheme('theme-green')" class="h-10 rounded-xl bg-gradient-to-r from-emerald-600 to-lime-500"></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="fixed top-16 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-xs px-4 py-2 rounded-full border border-slate-700 shadow-xl opacity-0 transition-opacity duration-300 pointer-events-none z-70">Link copiado!</div>
+
+  <script>
+    // Gerar um avatar padrão neutro em SVG (sem foto)
+    const defaultAvatarSvg = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2364748b'%3E%3Cpath d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z'/%3E%3C/svg%3E";
+
+    // Gerar nome "SemNome" + número aleatório (ex: SemNome4829)
+    const randomNum = Math.floor(1000 + Math.random() * 9000);
+    let currentUser = { 
+      name: `SemNome${randomNum}`, 
+      handle: `@semnome${randomNum}`, 
+      avatar: defaultAvatarSvg, 
+      bio: 'Criador de conteúdo 🚀', 
+      following: 0, 
+      followers: 0, 
+      likes: 0 
+    };
+
+    let videos = [];
+    let mediaRecorder;
+    let recordedChunks = [];
+    let isRecording = false;
+    let cameraStream = null;
+    let currentFacingMode = 'user';
+    let currentCreateMode = 'video';
+    let searchQuery = '';
+    let activeProfileTab = 'my-videos';
+    let currentCommentVideoId = null;
+    let tempVideoUrl = null;
+
+    document.addEventListener('DOMContentLoaded', () => { 
+      loadUserSession();
+      loadVideosStorage();
+      renderFeed(); 
+      renderProfile(); 
+      lucide.createIcons(); 
+    });
+
+    function loadUserSession() {
+      const saved = localStorage.getItem('vidstream_user_v6');
+      if (saved) {
+        try { currentUser = JSON.parse(saved); } catch(e) {}
+      }
+    }
+
+    function saveUserSession() {
+      localStorage.setItem('vidstream_user_v6', JSON.stringify(currentUser));
+    }
+
+    function loadVideosStorage() {
+      const savedVideos = localStorage.getItem('vidstream_videos_v6');
+      if (savedVideos) {
+        try {
+          const parsed = JSON.parse(savedVideos);
+          if (Array.isArray(parsed)) videos = parsed;
+        } catch(e) {}
+      }
+    }
+
+    function saveVideosStorage() {
+      localStorage.setItem('vidstream_videos_v6', JSON.stringify(videos));
+    }
+
+    function openEditProfileModal() {
+      document.getElementById('edit-profile-name').value = currentUser.name;
+      document.getElementById('edit-profile-handle').value = currentUser.handle;
+      document.getElementById('edit-profile-bio').value = currentUser.bio;
+      openModal('modal-edit-profile');
+    }
+
+    function handleSaveProfile(e) {
+      e.preventDefault();
+      const name = document.getElementById('edit-profile-name').value.trim();
+      let handle = document.getElementById('edit-profile-handle').value.trim();
+      const bio = document.getElementById('edit-profile-bio').value.trim();
+
+      if (!handle.startsWith('@')) handle = '@' + handle;
+
+      currentUser.name = name;
+      currentUser.handle = handle;
+      currentUser.bio = bio;
+
+      saveUserSession();
+      closeModal('modal-edit-profile');
+      renderProfile();
+      renderFeed();
+      showToast('Perfil atualizado com sucesso!');
+    }
+
+    function handleAvatarFile(e) {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+          currentUser.avatar = event.target.result;
+          saveUserSession();
+          renderProfile();
+          renderFeed();
+          showToast('Foto de perfil alterada!');
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    function triggerAvatarUpload() {
+      document.getElementById('input-avatar-file').click();
+    }
+
+    async function openCreateModal(mode = 'video') {
+      document.getElementById('modal-create').classList.remove('hidden');
+      await switchCreateTab(mode);
+    }
+
+    async function switchCreateTab(mode) {
+      currentCreateMode = mode;
+      document.getElementById('create-tab-video').className = 'px-3 py-1 rounded-full transition ' + (mode === 'video' ? 'bg-brand text-white' : '');
+      document.getElementById('create-tab-photo').className = 'px-3 py-1 rounded-full transition ' + (mode === 'photo' ? 'bg-brand text-white' : '');
+      document.getElementById('create-tab-live').className = 'px-3 py-1 rounded-full transition ' + (mode === 'live' ? 'bg-red-600 text-white' : '');
+
+      const indicator = document.getElementById('live-indicator');
+      if (mode === 'live') indicator.classList.remove('hidden');
+      else indicator.classList.add('hidden');
+
+      await startCamera(currentFacingMode);
+    }
+
+    async function startCamera(facing) {
+      try {
+        if (cameraStream) cameraStream.getTracks().forEach(t => t.stop());
+        cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facing }, audio: true });
+        const videoElement = document.getElementById('capture-preview');
+        videoElement.srcObject = cameraStream;
+        await videoElement.play();
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    async function switchCameraFacing() {
+      currentFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
+      await startCamera(currentFacingMode);
+    }
+
+    async function startScreenShareLive() {
+      try {
+        if (cameraStream) cameraStream.getTracks().forEach(t => t.stop());
+        cameraStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+        const videoElement = document.getElementById('capture-preview');
+        videoElement.srcObject = cameraStream;
+        await videoElement.play();
+        document.getElementById('modal-create').classList.remove('hidden');
+        document.getElementById('live-indicator').classList.remove('hidden');
+        showToast('Partilha de tela ativa!');
+      } catch (e) {
+        showToast('Partilha de tela cancelada.');
+      }
+    }
+
+    function closeCreateModal() {
+      if (isRecording) stopRecording();
+      if (cameraStream) cameraStream.getTracks().forEach(t => t.stop());
+      document.getElementById('modal-create').classList.add('hidden');
+    }
+
+    function triggerAction() {
+      if (currentCreateMode === 'photo') takeSnapshot();
+      else { if (!isRecording) startRecording(); else stopRecording(); }
+    }
+
+    function startRecording() {
+      recordedChunks = [];
+      let options = { mimeType: 'video/webm;codecs=vp8,opus' };
+      if (!MediaRecorder.isTypeSupported(options.mimeType)) options = { mimeType: 'video/webm' };
+      try { mediaRecorder = new MediaRecorder(cameraStream, options); } catch (e) { mediaRecorder = new MediaRecorder(cameraStream); }
+
+      mediaRecorder.ondataavailable = e => { if (e.data.size > 0) recordedChunks.push(e.data); };
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(recordedChunks, { type: 'video/webm' });
+        tempVideoUrl = URL.createObjectURL(blob);
+        proceedToEditor(tempVideoUrl);
+      };
+      mediaRecorder.start();
+      isRecording = true;
+      document.getElementById('trigger-inner').className = 'w-6 h-6 bg-white rounded-md';
+      showToast('A gravar...');
+    }
+
+    function stopRecording() {
+      if (mediaRecorder && isRecording) {
+        mediaRecorder.stop();
+        isRecording = false;
+        document.getElementById('trigger-inner').className = 'w-full h-full bg-red-600 rounded-full';
+        closeCreateModal();
+      }
+    }
+
+    function takeSnapshot() {
+      const video = document.getElementById('capture-preview');
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth || 720; canvas.height = video.videoHeight || 1280;
+      const ctx = canvas.getContext('2d'); ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      tempVideoUrl = canvas.toDataURL('image/png');
+      closeCreateModal();
+      proceedToEditor(tempVideoUrl);
+    }
+
+    function handleFileSelected(e) {
+      const file = e.target.files[0];
+      if (file) { 
+        tempVideoUrl = URL.createObjectURL(file);
+        closeCreateModal();
+        proceedToEditor(tempVideoUrl);
+      }
+    }
+
+    function proceedToEditor(url) {
+      document.getElementById('editor-video-preview').src = url;
+      document.getElementById('video-overlay-input').value = '';
+      document.getElementById('overlay-text-display').innerText = '';
+      document.getElementById('modal-edit-video').classList.remove('hidden');
+    }
+
+    function backToCreateModal() {
+      document.getElementById('modal-edit-video').classList.add('hidden');
+      openCreateModal('video');
+    }
+
+    function updateOverlayText(val) {
+      document.getElementById('overlay-text-display').innerText = val;
+    }
+
+    function setTextColor(color) {
+      document.getElementById('overlay-text-display').style.color = color;
+    }
+
+    function goToFinalPostModal() {
+      document.getElementById('modal-edit-video').classList.add('hidden');
+      document.getElementById('final-thumb-preview').src = tempVideoUrl;
+      document.getElementById('final-caption-input').value = document.getElementById('video-overlay-input').value || 'Meu vídeo incrível 🎬';
+      document.getElementById('final-hashtags-input').value = '#foryou #viral #vidstream';
+      document.getElementById('modal-final-post').classList.remove('hidden');
+    }
+
+    function backToEditorModal() {
+      document.getElementById('modal-final-post').classList.add('hidden');
+      document.getElementById('modal-edit-video').classList.remove('hidden');
+    }
+
+    function publishFinalVideo() {
+      const caption = document.getElementById('final-caption-input').value.trim() || 'Meu vídeo 🚀';
+      const hashtags = document.getElementById('final-hashtags-input').value.trim();
+      const finalCaption = `${caption} ${hashtags}`;
+
+      videos.unshift({ 
+        id: Date.now(), 
+        author: currentUser.name, 
+        handle: currentUser.handle, 
+        avatar: currentUser.avatar, 
+        url: tempVideoUrl, 
+        caption: finalCaption, 
+        likesCount: 0, 
+        liked: false, 
+        saved: false, 
+        following: false, 
+        comments: [] 
+      });
+
+      saveVideosStorage();
+      document.getElementById('modal-final-post').classList.add('hidden');
+      switchTab('feed');
+      renderFeed();
+      renderProfile();
+      showToast('Publicado com sucesso! 🚀');
+    }
+
+    function handleSearch(q) {
+      searchQuery = q.trim().toLowerCase();
+      switchTab('feed');
+      renderFeed();
+    }
+
+    function renderFeed() {
+      const container = document.getElementById('video-container');
+      
+      let filtered = videos;
+      if (searchQuery) {
+        if (searchQuery.startsWith('@')) {
+          filtered = videos.filter(v => v.handle.toLowerCase().includes(searchQuery));
+        } else {
+          filtered = videos.filter(v => v.caption.toLowerCase().includes(searchQuery) || v.author.toLowerCase().includes(searchQuery));
+        }
+      }
+
+      if (filtered.length === 0) {
+        container.innerHTML = `<div class="w-full h-full flex flex-col items-center justify-center p-6 text-center text-slate-500"><i data-lucide="video-off" class="w-12 h-12 mb-2 text-brand"></i><p class="text-sm font-semibold">Nenhum conteúdo publicado.</p></div>`;
+        lucide.createIcons(); return;
+      }
+      container.innerHTML = filtered.map(v => `
+        <div class="w-full h-full snap-start relative flex items-center justify-center bg-black">
+          <video src="${v.url}" preload="auto" loop playsinline autoplay controls webkit-playsinline class="w-full h-full object-contain"></video>
+          <div class="absolute right-3 bottom-16 flex flex-col items-center gap-4 z-20">
+            <div class="relative mb-2 flex flex-col items-center">
+              <img src="${v.avatar}" class="w-10 h-10 rounded-full border-2 border-white object-cover shadow-lg bg-slate-800">
+              <button onclick="toggleFollow(${v.id})" class="absolute -bottom-2 bg-brand text-white rounded-full p-1 shadow"><i data-lucide="${v.following ? 'check' : 'plus'}" class="w-3 h-3"></i></button>
+            </div>
+            
+            ${v.following ? `
+              <button onclick="openChat('${v.author}', '${v.handle}', '${v.avatar}')" class="p-2.5 rounded-full bg-brand text-white shadow-lg transition hover:scale-105" title="Conversar">
+                <i data-lucide="message-square" class="w-5 h-5"></i>
+              </button>
+            ` : ''}
+
+            <button onclick="toggleLike(${v.id})" class="flex flex-col items-center"><div class="p-2.5 rounded-full bg-black/40"><i data-lucide="heart" class="w-7 h-7 ${v.liked ? 'text-pink-500 fill-pink-500' : 'text-white'}"></i></div><span class="text-[11px] font-bold text-white">${v.likesCount}</span></button>
+            <button onclick="openComments(${v.id})" class="flex flex-col items-center"><div class="p-2.5 rounded-full bg-black/40"><i data-lucide="message-circle" class="w-7 h-7 text-white"></i></div><span class="text-[11px] font-bold text-white">${v.comments.length}</span></button>
+            <button onclick="toggleSave(${v.id})" class="flex flex-col items-center"><div class="p-2.5 rounded-full bg-black/40"><i data-lucide="bookmark" class="w-7 h-7 ${v.saved ? 'text-amber-400 fill-amber-400' : 'text-white'}"></i></div><span class="text-[11px] font-bold text-white">Salvar</span></button>
+          </div>
+          <div class="absolute left-3 bottom-16 right-20 z-20 pointer-events-none">
+            <h4 class="font-bold text-sm text-white">${v.author} <span class="text-xs text-slate-400 font-normal">${v.handle}</span></h4>
+            <p class="text-xs text-slate-100 mt-1">${v.caption}</p>
+          </div>
+        </div>
+      `).join('');
+      lucide.createIcons();
+    }
+
+    function openChat(name, handle, avatar) {
+      document.getElementById('chat-user-name').innerText = name;
+      document.getElementById('chat-user-handle').innerText = handle;
+      document.getElementById('chat-user-avatar').src = avatar;
+      openModal('modal-chat');
+    }
+
+    function handleSendChatMessage(e) {
+      e.preventDefault();
+      const input = document.getElementById('chat-input-message');
+      const text = input.value.trim();
+      if (!text) return;
+
+      const container = document.getElementById('chat-messages-container');
+      container.innerHTML += `
+        <div class="flex justify-end">
+          <div class="bg-brand text-white p-2.5 rounded-xl max-w-[80%] font-medium">
+            ${text}
+          </div>
+        </div>
+      `;
+      input.value = '';
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function openComments(id) {
+      currentCommentVideoId = id;
+      renderCommentsList();
+      openModal('modal-comments');
+    }
+
+    function renderCommentsList() {
+      const v = videos.find(item => item.id === currentCommentVideoId);
+      const listContainer = document.getElementById('comments-list');
+      if (!v || v.comments.length === 0) {
+        listContainer.innerHTML = '<p class="text-slate-500 text-center py-4">Sem comentários ainda.</p>';
+        return;
+      }
+      listContainer.innerHTML = v.comments.map((c, index) => `
+        <div class="bg-slate-800 p-2.5 rounded-xl flex items-center justify-between gap-2">
+          <div class="flex-1">
+            <span class="font-bold text-brand">${c.user}: </span>
+            <span class="text-slate-200">${c.content}</span>
+          </div>
+          <button onclick="deleteComment(${index})" class="text-slate-400 hover:text-red-400 p-1.5 transition" title="Deletar Comentário">
+            <i data-lucide="trash-2" class="w-4 h-4"></i>
+          </button>
+        </div>
+      `).join('');
+      lucide.createIcons();
+    }
+
+    function deleteComment(index) {
+      const v = videos.find(item => item.id === currentCommentVideoId);
+      if (v) {
+        v.comments.splice(index, 1);
+        saveVideosStorage();
+        renderCommentsList();
+        renderFeed();
+        showToast('Comentário deletado.');
+      }
+    }
+
+    function handleAddComment(e) {
+      e.preventDefault();
+      const input = document.getElementById('comment-input');
+      const v = videos.find(item => item.id === currentCommentVideoId);
+      if (v && input.value.trim()) {
+        v.comments.push({ user: currentUser.name, content: input.value.trim() });
+        saveVideosStorage();
+        input.value = '';
+        renderCommentsList();
+        renderFeed();
+      }
+    }
+
+    function toggleLike(id) { 
+      const v = videos.find(i => i.id === id); 
+      if(v){ 
+        v.liked = !v.liked; 
+        v.likesCount += v.liked ? 1 : -1; 
+        saveVideosStorage();
+        renderFeed(); 
+        renderProfile(); 
+      } 
+    }
+
+    function toggleSave(id) { 
+      const v = videos.find(i => i.id === id); 
+      if(v){ 
+        v.saved = !v.saved; 
+        saveVideosStorage();
+        showToast(v.saved ? 'Salvo!' : 'Removido.'); 
+        renderFeed(); 
+        renderProfile(); 
+      } 
+    }
+
+    function toggleFollow(id) { 
+      const v = videos.find(i => i.id === id); 
+      if(v){ 
+        v.following = !v.following; 
+        saveVideosStorage();
+        renderFeed();
+        showToast(v.following ? `A seguir ${v.author}! Chat desbloqueado 💬` : 'Deixaste de seguir.');
+      } 
+    }
+
+    function switchTab(tab) {
+      ['feed', 'profile', 'live'].forEach(t => document.getElementById(`view-${t}`).classList.add('hidden'));
+      ['feed', 'live', 'profile'].forEach(t => document.getElementById(`nav-${t}`).className = 'flex flex-col items-center gap-0.5 text-slate-500 transition');
+      document.getElementById(`view-${tab}`).classList.remove('hidden');
+      document.getElementById(`nav-${tab}`).className = 'flex flex-col items-center gap-0.5 text-brand transition';
+      if(tab === 'feed') renderFeed();
+      if(tab === 'profile') renderProfile();
+    }
+
+    function switchProfileTab(tab) {
+      activeProfileTab = tab;
+      ['my-videos', 'liked-videos', 'saved-videos'].forEach(t => document.getElementById(`tab-btn-${t}`).className = 'pb-2');
+      document.getElementById(`tab-btn-${tab}`).className = 'pb-2 border-b-2 border-brand text-brand font-bold';
+      renderProfile();
+    }
+
+    function renderProfile() {
+      document.getElementById('profile-name').innerText = currentUser.name;
+      document.getElementById('profile-handle').innerText = currentUser.handle;
+      document.getElementById('profile-avatar').src = currentUser.avatar;
+      document.getElementById('profile-bio').innerText = currentUser.bio;
+      document.getElementById('profile-following-count').innerText = currentUser.following;
+      document.getElementById('profile-likes-count').innerText = videos.reduce((acc, v) => acc + v.likesCount, 0);
+
+      let list = videos.filter(v => {
+        if (activeProfileTab === 'my-videos') return v.handle === currentUser.handle;
+        if (activeProfileTab === 'liked-videos') return v.liked;
+        if (activeProfileTab === 'saved-videos') return v.saved;
+        return false;
+      });
+
+      document.getElementById('profile-videos-grid').innerHTML = list.length === 0 ? '<p class="col-span-3 text-xs text-slate-500 text-center py-8">Nenhum conteúdo.</p>' : list.map(v => `<div class="aspect-[3/4] bg-slate-900 rounded-lg overflow-hidden relative"><video src="${v.url}" class="w-full h-full object-cover"></video></div>`).join('');
+      lucide.createIcons();
+    }
+
+    function setTheme(name) { document.getElementById('app-body').className = `bg-black text-slate-100 flex flex-col h-[100dvh] overflow-hidden select-none ${name}`; closeModal('modal-settings'); showToast('Tema alterado!'); }
+    function showToast(msg) { const t = document.getElementById('toast'); t.innerText = msg; t.classList.remove('opacity-0'); setTimeout(() => t.classList.add('opacity-0'), 2500); }
+    function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+    function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+  </script>
+</body>
+</html>
+hidden'); }
+  </script>
+</body>
+</html>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VidStream</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Manifest embutido para o PWABuilder -->
+    <link rel="manifest" href='data:application/manifest+json,{"name":"VidStream","short_name":"VidStream","start_url":"/","display":"standalone","background_color":"#000000","theme_color":"#000000"}'>
+    <style>
+        body { background-color: #000000; color: #ffffff; font-family: system-ui, -apple-system, sans-serif; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between pb-16">
+
+    <!-- Header / Topo -->
+    <header class="flex items-center justify-between p-4 border-b border-gray-800">
+        <div class="flex items-center space-x-2">
+            <div id="user-avatar" class="w-9 h-9 rounded-full bg-pink-600 flex items-center justify-center font-bold text-white overflow-hidden cursor-pointer" onclick="openProfileModal()">
+                V
+            </div>
+            <span class="font-bold text-lg tracking-wide">VidStream</span>
+        </div>
+        <div class="flex items-center space-x-3">
+            <button onclick="openUploadModal()" class="bg-pink-600 hover:bg-pink-700 text-white px-3 py-1.5 rounded-full text-sm font-semibold flex items-center space-x-1">
+                <i data-lucide="plus" class="w-4 h-4"></i>
+                <span>Criar</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Conteúdo Principal -->
+    <main class="flex-1 flex flex-col items-center justify-center p-6 text-center">
+        <div class="w-16 h-16 rounded-full bg-gray-900 border border-gray-800 flex items-center justify-center mb-4 text-pink-500">
+            <i data-lucide="video-off" class="w-8 h-8"></i>
+        </div>
+        <h2 class="text-gray-300 font-medium">Nenhum conteúdo publicado.</h2>
+    </main>
+
+    <!-- Barra de Navegação Inferior -->
+    <nav class="fixed bottom-0 left-0 right-0 bg-black border-t border-gray-900 flex justify-around items-center py-3 z-50">
+        <button class="flex flex-col items-center text-pink-500">
+            <i data-lucide="compass" class="w-6 h-6"></i>
+            <span class="text-[10px] mt-1">Início</span>
+        </button>
+        <button class="flex flex-col items-center text-gray-400 hover:text-white">
+            <i data-lucide="radio" class="w-6 h-6"></i>
+            <span class="text-[10px] mt-1">Live</span>
+        </button>
+        <button onclick="openUploadModal()" class="w-10 h-10 bg-pink-600 rounded-full flex items-center justify-center text-white shadow-lg">
+            <i data-lucide="plus" class="w-5 h-5"></i>
+        </button>
+        <button class="flex flex-col items-center text-gray-400 hover:text-white" onclick="openProfileModal()">
+            <i data-lucide="user" class="w-6 h-6"></i>
+            <span class="text-[10px] mt-1">Perfil</span>
+        </button>
+    </nav>
+
+    <!-- Scripts de Inicialização dos Ícones -->
+    <script>
+        lucide.createIcons();
+
+        function openUploadModal() {
+            alert("Painel de gravação e envio de vídeos.");
+        }
+
+        function openProfileModal() {
+            let nomeAtual = localStorage.getItem("vidstream_user") || "SemNome" + Math.floor(1000 + Math.random() * 9000);
+            let novoNome = prompt("Editar Nome de Perfil:", nomeAtual);
+            if (novoNome) {
+                localStorage.setItem("vidstream_user", novoNome);
+                alert("Perfil atualizado para: " + novoNome);
+            }
+        }
+    </script>
+</body>
+</html>
+-full object-cover border-4 border-brand shadow-xl bg-slate-800">
+          <button onclick="triggerAvatarUpload()" class="absolute bottom-0 right-0 bg-brand text-white p-2 rounded-full shadow-lg border-2 border-slate-950 transition">
+            <i data-lucide="camera" class="w-4 h-4"></i>
+          </button>
+          <input type="file" id="input-avatar-file" accept="image/*" class="hidden" onchange="handleAvatarFile(event)">
+        </div>
+
+        <h2 id="profile-name" class="text-xl font-bold mt-3">SemNome</h2>
+        <p id="profile-handle" class="text-xs text-slate-400">@semnome</p>
+        <p id="profile-bio" class="text-sm text-slate-300 mt-2 px-4 max-w-sm">Criador de conteúdo 🚀</p>
+
+        <!-- BOTÃO EDITAR PERFIL -->
+        <button onclick="openEditProfileModal()" class="mt-4 bg-slate-900 hover:bg-slate-800 border border-slate-700 text-white font-bold px-5 py-2 rounded-xl text-xs transition flex items-center gap-2 shadow">
+          <i data-lucide="edit-3" class="w-3.5 h-3.5 text-brand"></i> Editar Perfil
+        </button>
+
+        <div class="flex gap-6 mt-4 py-3 px-6 bg-slate-900/60 rounded-2xl border border-slate-800">
+          <div class="text-center"><span id="profile-following-count" class="font-bold text-slate-100 block">0</span><span class="text-xs text-slate-400">Seguindo</span></div>
+          <div class="text-center"><span id="profile-followers-count" class="font-bold text-slate-100 block">0</span><span class="text-xs text-slate-400">Seguidores</span></div>
+          <div class="text-center"><span id="profile-likes-count" class="font-bold text-slate-100 block">0</span><span class="text-xs text-slate-400">Curtidas</span></div>
+        </div>
+
+        <div class="w-full mt-6">
+          <div class="flex border-b border-slate-900 text-slate-400 font-medium text-xs justify-around mb-3">
+            <button onclick="switchProfileTab('my-videos')" id="tab-btn-my-videos" class="pb-2 border-b-2 border-brand text-brand font-bold">Vídeos</button>
+            <button onclick="switchProfileTab('liked-videos')" id="tab-btn-liked-videos" class="pb-2">Curtidos</button>
+            <button onclick="switchProfileTab('saved-videos')" id="tab-btn-saved-videos" class="pb-2">Salvos</button>
+          </div>
+          <div id="profile-videos-grid" class="grid grid-cols-3 gap-2"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ABA LIVE -->
+    <section id="view-live" class="w-full h-full bg-black hidden relative flex flex-col items-center justify-center p-6 text-center">
+      <div class="w-16 h-16 rounded-full bg-red-600/20 border-2 border-red-500 flex items-center justify-center mb-4 animate-pulse">
+        <i data-lucide="radio" class="w-8 h-8 text-red-500"></i>
+      </div>
+      <h3 class="text-lg font-bold text-white mb-1">Central de Transmissões & Lives</h3>
+      <p class="text-xs text-slate-400 max-w-xs mb-6">Escolha o modo de transmissão com total segurança local:</p>
+      
+      <div class="flex flex-col gap-3 w-full max-w-xs">
+        <button onclick="openCreateModal('live')" class="bg-slate-900 hover:bg-slate-800 border border-slate-800 p-3.5 rounded-xl text-xs font-bold text-white flex items-center gap-3 transition">
+          <i data-lucide="video" class="w-5 h-5 text-brand"></i> Live com a Câmara (Frontal / Traseira)
+        </button>
+        <button onclick="startScreenShareLive()" class="bg-slate-900 hover:bg-slate-800 border border-slate-800 p-3.5 rounded-xl text-xs font-bold text-white flex items-center gap-3 transition">
+          <i data-lucide="monitor" class="w-5 h-5 text-blue-400"></i> Live da Tela (Celular / Jogo)
+        </button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- BARRA DE NAVEGAÇÃO INFERIOR -->
+  <nav class="h-14 border-t border-slate-900 bg-black flex items-center justify-around px-2 z-30 shrink-0">
+    <button onclick="switchTab('feed')" id="nav-feed" class="flex flex-col items-center gap-0.5 text-brand transition"><i data-lucide="compass" class="w-5 h-5"></i><span class="text-[9px]">Início</span></button>
+    <button onclick="switchTab('live')" id="nav-live" class="flex flex-col items-center gap-0.5 text-slate-500 transition"><i data-lucide="radio" class="w-5 h-5"></i><span class="text-[9px]">Live</span></button>
+    <button onclick="openCreateModal('video')" class="gradient-brand p-2.5 rounded-full text-white shadow-lg transform -translate-y-1"><i data-lucide="plus" class="w-5 h-5"></i></button>
+    <button onclick="switchTab('profile')" id="nav-profile" class="flex flex-col items-center gap-0.5 text-slate-500 transition"><i data-lucide="user" class="w-5 h-5"></i><span class="text-[9px]">Perfil</span></button>
+  </nav>
+
+  <!-- MODAL DE EDITAR PERFIL -->
+  <div id="modal-edit-profile" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-sm p-5 relative shadow-2xl space-y-4">
+      <button onclick="closeModal('modal-edit-profile')" class="absolute top-4 right-4 text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+      <h3 class="text-base font-bold text-white">Editar Perfil</h3>
+      
+      <form onsubmit="handleSaveProfile(event)" class="space-y-3 text-left">
+        <div>
+          <label class="text-[11px] text-slate-400 font-semibold block mb-1">Nome</label>
+          <input type="text" id="edit-profile-name" placeholder="O seu nome" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-brand">
+        </div>
+        <div>
+          <label class="text-[11px] text-slate-400 font-semibold block mb-1">Apelido / Handle (@)</label>
+          <input type="text" id="edit-profile-handle" placeholder="@seu_usuario" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-brand">
+        </div>
+        <div>
+          <label class="text-[11px] text-slate-400 font-semibold block mb-1">Biografia</label>
+          <textarea id="edit-profile-bio" rows="2" placeholder="Escreva algo sobre si..." class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-brand"></textarea>
+        </div>
+        <button type="submit" class="w-full gradient-brand text-white font-bold py-2.5 rounded-xl text-xs shadow-lg transition active:scale-95 mt-1">Guardar Alterações</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- PASSO 1: MODAL DE CAPTURA / GRAVAÇÃO -->
+  <div id="modal-create" class="fixed inset-0 bg-black z-50 flex flex-col justify-between hidden">
+    <div class="absolute top-4 left-4 right-4 flex items-center justify-between z-20">
+      <button onclick="closeCreateModal()" class="text-white p-2.5 rounded-full bg-black/60 backdrop-blur"><i data-lucide="x" class="w-5 h-5"></i></button>
+      <div class="flex bg-black/60 backdrop-blur p-1 rounded-full border border-white/10 text-xs font-bold text-slate-300">
+        <button onclick="switchCreateTab('video')" id="create-tab-video" class="px-3 py-1 rounded-full bg-brand text-white transition">Vídeo</button>
+        <button onclick="switchCreateTab('photo')" id="create-tab-photo" class="px-3 py-1 rounded-full transition">Foto</button>
+        <button onclick="switchCreateTab('live')" id="create-tab-live" class="px-3 py-1 rounded-full transition">Live</button>
+      </div>
+      <button onclick="switchCameraFacing()" id="btn-flip-cam" class="text-white p-2.5 rounded-full bg-black/60 backdrop-blur"><i data-lucide="refresh-cw" class="w-5 h-5"></i></button>
+    </div>
+
+    <div class="flex-1 relative bg-black flex items-center justify-center overflow-hidden">
+      <video id="capture-preview" autoplay playsinline muted class="w-full h-full object-cover"></video>
+      <div id="live-indicator" class="absolute top-16 bg-red-600 text-white font-bold text-[10px] px-3 py-1 rounded-full uppercase tracking-wider hidden flex items-center gap-1.5 animate-pulse">
+        <span class="w-2 h-2 rounded-full bg-white"></span> Transmissão de Live Ativa
+      </div>
+    </div>
+
+    <div class="bg-black/95 p-6 pb-8 flex flex-col items-center gap-4 z-20 border-t border-slate-900">
+      <div class="flex items-center justify-around w-full max-w-xs">
+        <label class="w-11 h-11 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center cursor-pointer hover:bg-slate-800 transition">
+          <i data-lucide="image" class="w-5 h-5 text-slate-300"></i>
+          <input type="file" id="post-file" accept="video/*,image/*" class="hidden" onchange="handleFileSelected(event)">
+        </label>
+        <button id="btn-trigger" onclick="triggerAction()" class="w-18 h-18 rounded-full border-4 border-white flex items-center justify-center p-1.5 transition active:scale-95">
+          <div id="trigger-inner" class="w-full h-full bg-red-600 rounded-full transition-all"></div>
+        </button>
+        <button onclick="startScreenShareLive()" class="w-11 h-11 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center text-white hover:bg-slate-800 transition" title="Gravar Tela">
+          <i data-lucide="monitor" class="w-5 h-5 text-blue-400"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PASSO 2: TELA DE EDIÇÃO DE TEXTO NO VÍDEO -->
+  <div id="modal-edit-video" class="fixed inset-0 bg-black z-50 flex flex-col justify-between hidden">
+    <div class="absolute top-4 left-4 right-4 flex items-center justify-between z-30">
+      <button onclick="backToCreateModal()" class="text-white p-2.5 rounded-full bg-black/60 backdrop-blur"><i data-lucide="arrow-left" class="w-5 h-5"></i></button>
+      <span class="text-xs font-bold text-white bg-black/60 px-3 py-1 rounded-full">Adicionar Texto no Vídeo</span>
+      <button onclick="goToFinalPostModal()" class="gradient-brand text-white font-bold px-4 py-1.5 rounded-full text-xs shadow-lg">Avançar</button>
+    </div>
+
+    <div class="flex-1 relative bg-black flex items-center justify-center overflow-hidden">
+      <video id="editor-video-preview" autoplay playsinline loop muted class="w-full h-full object-contain"></video>
+      <div id="overlay-text-display" class="absolute font-bold text-2xl drop-shadow-lg text-center px-4 pointer-events-none transition-all"></div>
+    </div>
+
+    <div class="bg-black/95 p-5 pb-8 flex flex-col gap-3 z-30 border-t border-slate-900">
+      <input type="text" id="video-overlay-input" oninput="updateOverlayText(this.value)" placeholder="Digite o texto para colocar no vídeo..." class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-brand">
+      
+      <div class="flex items-center justify-between px-2">
+        <span class="text-[11px] text-slate-400 font-semibold">Cor do Texto:</span>
+        <div class="flex gap-2">
+          <button onclick="setTextColor('#ffffff')" class="w-6 h-6 rounded-full bg-white border-2 border-slate-700 active:scale-95 transition"></button>
+          <button onclick="setTextColor('#ec4899')" class="w-6 h-6 rounded-full bg-pink-500 border-2 border-slate-700 active:scale-95 transition"></button>
+          <button onclick="setTextColor('#3b82f6')" class="w-6 h-6 rounded-full bg-blue-500 border-2 border-slate-700 active:scale-95 transition"></button>
+          <button onclick="setTextColor('#10b981')" class="w-6 h-6 rounded-full bg-emerald-500 border-2 border-slate-700 active:scale-95 transition"></button>
+          <button onclick="setTextColor('#eab308')" class="w-6 h-6 rounded-full bg-yellow-500 border-2 border-slate-700 active:scale-95 transition"></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PASSO 3: TELA FINAL DE POSTAGEM -->
+  <div id="modal-final-post" class="fixed inset-0 bg-black z-50 flex flex-col justify-between hidden p-4">
+    <div class="flex items-center justify-between pt-2">
+      <button onclick="backToEditorModal()" class="text-white p-2 rounded-full bg-slate-900"><i data-lucide="arrow-left" class="w-5 h-5"></i></button>
+      <h3 class="font-bold text-sm text-white">Detalhes da Publicação</h3>
+      <button onclick="publishFinalVideo()" class="gradient-brand text-white font-bold px-4 py-1.5 rounded-full text-xs shadow-lg">Publicar</button>
+    </div>
+
+    <div class="flex-1 flex flex-col gap-4 py-4 max-w-md mx-auto w-full">
+      <div class="flex gap-3 bg-slate-900/60 p-3 rounded-2xl border border-slate-800">
+        <video id="final-thumb-preview" class="w-20 h-28 object-cover rounded-xl bg-black"></video>
+        <div class="flex-1 flex flex-col justify-center">
+          <span class="text-xs font-bold text-brand">Vídeo Pronto!</span>
+          <span class="text-[10px] text-slate-400 mt-1">O seu vídeo está otimizado para viralizar com segurança local.</span>
+        </div>
+      </div>
+
+      <div class="space-y-1.5">
+        <label class="text-xs text-slate-400 font-semibold block">Legenda Principal (Embaixo)</label>
+        <textarea id="final-caption-input" rows="3" placeholder="Escreva a legenda principal do seu vídeo..." class="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-brand"></textarea>
+      </div>
+
+      <div class="space-y-1.5">
+        <label class="text-xs text-slate-400 font-semibold block">Hashtags para Viralizar (+50% Frequência)</label>
+        <input type="text" id="final-hashtags-input" placeholder="#foryou #viral #gamer #vidstream" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-brand">
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DE COMENTÁRIOS COM LIXEIRA -->
+  <div id="modal-comments" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex justify-end flex-col hidden">
+    <div class="bg-slate-900 border-t border-slate-800 rounded-t-2xl w-full h-3/4 max-w-md mx-auto flex flex-col p-4 relative">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-3 mb-2">
+        <h4 class="font-bold text-sm">Comentários</h4>
+        <button onclick="closeModal('modal-comments')" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <div id="comments-list" class="flex-1 overflow-y-auto space-y-3 py-2 pr-1 text-xs"></div>
+      <form onsubmit="handleAddComment(event)" class="pt-2 border-t border-slate-800 flex items-center gap-2">
+        <input type="text" id="comment-input" placeholder="Comentar..." required class="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+        <button type="submit" class="bg-brand text-white px-4 py-2 rounded-xl font-bold text-xs">Enviar</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL DE CHAT DIRETO -->
+  <div id="modal-chat" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md h-[80vh] flex flex-col p-4 relative shadow-2xl">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-3 mb-2">
+        <div class="flex items-center gap-2">
+          <img id="chat-user-avatar" src="" class="w-8 h-8 rounded-full object-cover border border-brand bg-slate-800">
+          <div>
+            <h4 id="chat-user-name" class="font-bold text-sm text-white">Nome</h4>
+            <span id="chat-user-handle" class="text-[10px] text-slate-400">@handle</span>
+          </div>
+        </div>
+        <button onclick="closeModal('modal-chat')" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+
+      <div id="chat-messages-container" class="flex-1 overflow-y-auto space-y-3 py-2 pr-1 text-xs">
+        <div class="bg-slate-800 p-2.5 rounded-xl max-w-[80%] text-slate-200">
+          Olá! Conversa iniciada com sucesso.
+        </div>
+      </div>
+
+      <form onsubmit="handleSendChatMessage(event)" class="pt-3 border-t border-slate-800 flex items-center gap-2">
+        <input type="text" id="chat-input-message" placeholder="Escreva uma mensagem..." required class="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none">
+        <button type="submit" class="bg-brand text-white px-4 py-2.5 rounded-xl font-bold text-xs">Enviar</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL CONFIGURAÇÕES -->
+  <div id="modal-settings" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 relative shadow-2xl space-y-4">
+      <button onclick="closeModal('modal-settings')" class="absolute top-4 right-4 text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+      <h3 class="text-lg font-bold">Configurações</h3>
+      <div class="space-y-2">
+        <label class="text-xs text-slate-400 font-semibold block">Cor da Plataforma</label>
+        <div class="grid grid-cols-4 gap-2">
+          <button onclick="setTheme('theme-pink')" class="h-10 rounded-xl bg-gradient-to-r from-pink-600 to-rose-500"></button>
+          <button onclick="setTheme('theme-blue')" class="h-10 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500"></button>
+          <button onclick="setTheme('theme-purple')" class="h-10 rounded-xl bg-gradient-to-r from-purple-600 to-pink-500"></button>
+          <button onclick="setTheme('theme-green')" class="h-10 rounded-xl bg-gradient-to-r from-emerald-600 to-lime-500"></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="fixed top-16 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-xs px-4 py-2 rounded-full border border-slate-700 shadow-xl opacity-0 transition-opacity duration-300 pointer-events-none z-70">Link copiado!</div>
+
+  <script>
+    // Gerar um avatar padrão neutro em SVG (sem foto)
+    const defaultAvatarSvg = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2364748b'%3E%3Cpath d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z'/%3E%3C/svg%3E";
+
+    // Gerar nome "SemNome" + número aleatório (ex: SemNome4829)
+    const randomNum = Math.floor(1000 + Math.random() * 9000);
+    let currentUser = { 
+      name: `SemNome${randomNum}`, 
+      handle: `@semnome${randomNum}`, 
+      avatar: defaultAvatarSvg, 
+      bio: 'Criador de conteúdo 🚀', 
+      following: 0, 
+      followers: 0, 
+      likes: 0 
+    };
+
+    let videos = [];
+    let mediaRecorder;
+    let recordedChunks = [];
+    let isRecording = false;
+    let cameraStream = null;
+    let currentFacingMode = 'user';
+    let currentCreateMode = 'video';
+    let searchQuery = '';
+    let activeProfileTab = 'my-videos';
+    let currentCommentVideoId = null;
+    let tempVideoUrl = null;
+
+    document.addEventListener('DOMContentLoaded', () => { 
+      loadUserSession();
+      loadVideosStorage();
+      renderFeed(); 
+      renderProfile(); 
+      lucide.createIcons(); 
+    });
+
+    function loadUserSession() {
+      const saved = localStorage.getItem('vidstream_user_v6');
+      if (saved) {
+        try { currentUser = JSON.parse(saved); } catch(e) {}
+      }
+    }
+
+    function saveUserSession() {
+      localStorage.setItem('vidstream_user_v6', JSON.stringify(currentUser));
+    }
+
+    function loadVideosStorage() {
+      const savedVideos = localStorage.getItem('vidstream_videos_v6');
+      if (savedVideos) {
+        try {
+          const parsed = JSON.parse(savedVideos);
+          if (Array.isArray(parsed)) videos = parsed;
+        } catch(e) {}
+      }
+    }
+
+    function saveVideosStorage() {
+      localStorage.setItem('vidstream_videos_v6', JSON.stringify(videos));
+    }
+
+    function openEditProfileModal() {
+      document.getElementById('edit-profile-name').value = currentUser.name;
+      document.getElementById('edit-profile-handle').value = currentUser.handle;
+      document.getElementById('edit-profile-bio').value = currentUser.bio;
+      openModal('modal-edit-profile');
+    }
+
+    function handleSaveProfile(e) {
+      e.preventDefault();
+      const name = document.getElementById('edit-profile-name').value.trim();
+      let handle = document.getElementById('edit-profile-handle').value.trim();
+      const bio = document.getElementById('edit-profile-bio').value.trim();
+
+      if (!handle.startsWith('@')) handle = '@' + handle;
+
+      currentUser.name = name;
+      currentUser.handle = handle;
+      currentUser.bio = bio;
+
+      saveUserSession();
+      closeModal('modal-edit-profile');
+      renderProfile();
+      renderFeed();
+      showToast('Perfil atualizado com sucesso!');
+    }
+
+    function handleAvatarFile(e) {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+          currentUser.avatar = event.target.result;
+          saveUserSession();
+          renderProfile();
+          renderFeed();
+          showToast('Foto de perfil alterada!');
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    function triggerAvatarUpload() {
+      document.getElementById('input-avatar-file').click();
+    }
+
+    async function openCreateModal(mode = 'video') {
+      document.getElementById('modal-create').classList.remove('hidden');
+      await switchCreateTab(mode);
+    }
+
+    async function switchCreateTab(mode) {
+      currentCreateMode = mode;
+      document.getElementById('create-tab-video').className = 'px-3 py-1 rounded-full transition ' + (mode === 'video' ? 'bg-brand text-white' : '');
+      document.getElementById('create-tab-photo').className = 'px-3 py-1 rounded-full transition ' + (mode === 'photo' ? 'bg-brand text-white' : '');
+      document.getElementById('create-tab-live').className = 'px-3 py-1 rounded-full transition ' + (mode === 'live' ? 'bg-red-600 text-white' : '');
+
+      const indicator = document.getElementById('live-indicator');
+      if (mode === 'live') indicator.classList.remove('hidden');
+      else indicator.classList.add('hidden');
+
+      await startCamera(currentFacingMode);
+    }
+
+    async function startCamera(facing) {
+      try {
+        if (cameraStream) cameraStream.getTracks().forEach(t => t.stop());
+        cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facing }, audio: true });
+        const videoElement = document.getElementById('capture-preview');
+        videoElement.srcObject = cameraStream;
+        await videoElement.play();
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    async function switchCameraFacing() {
+      currentFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
+      await startCamera(currentFacingMode);
+    }
+
+    async function startScreenShareLive() {
+      try {
+        if (cameraStream) cameraStream.getTracks().forEach(t => t.stop());
+        cameraStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+        const videoElement = document.getElementById('capture-preview');
+        videoElement.srcObject = cameraStream;
+        await videoElement.play();
+        document.getElementById('modal-create').classList.remove('hidden');
+        document.getElementById('live-indicator').classList.remove('hidden');
+        showToast('Partilha de tela ativa!');
+      } catch (e) {
+        showToast('Partilha de tela cancelada.');
+      }
+    }
+
+    function closeCreateModal() {
+      if (isRecording) stopRecording();
+      if (cameraStream) cameraStream.getTracks().forEach(t => t.stop());
+      document.getElementById('modal-create').classList.add('hidden');
+    }
+
+    function triggerAction() {
+      if (currentCreateMode === 'photo') takeSnapshot();
+      else { if (!isRecording) startRecording(); else stopRecording(); }
+    }
+
+    function startRecording() {
+      recordedChunks = [];
+      let options = { mimeType: 'video/webm;codecs=vp8,opus' };
+      if (!MediaRecorder.isTypeSupported(options.mimeType)) options = { mimeType: 'video/webm' };
+      try { mediaRecorder = new MediaRecorder(cameraStream, options); } catch (e) { mediaRecorder = new MediaRecorder(cameraStream); }
+
+      mediaRecorder.ondataavailable = e => { if (e.data.size > 0) recordedChunks.push(e.data); };
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(recordedChunks, { type: 'video/webm' });
+        tempVideoUrl = URL.createObjectURL(blob);
+        proceedToEditor(tempVideoUrl);
+      };
+      mediaRecorder.start();
+      isRecording = true;
+      document.getElementById('trigger-inner').className = 'w-6 h-6 bg-white rounded-md';
+      showToast('A gravar...');
+    }
+
+    function stopRecording() {
+      if (mediaRecorder && isRecording) {
+        mediaRecorder.stop();
+        isRecording = false;
+        document.getElementById('trigger-inner').className = 'w-full h-full bg-red-600 rounded-full';
+        closeCreateModal();
+      }
+    }
+
+    function takeSnapshot() {
+      const video = document.getElementById('capture-preview');
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth || 720; canvas.height = video.videoHeight || 1280;
+      const ctx = canvas.getContext('2d'); ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      tempVideoUrl = canvas.toDataURL('image/png');
+      closeCreateModal();
+      proceedToEditor(tempVideoUrl);
+    }
+
+    function handleFileSelected(e) {
+      const file = e.target.files[0];
+      if (file) { 
+        tempVideoUrl = URL.createObjectURL(file);
+        closeCreateModal();
+        proceedToEditor(tempVideoUrl);
+      }
+    }
+
+    function proceedToEditor(url) {
+      document.getElementById('editor-video-preview').src = url;
+      document.getElementById('video-overlay-input').value = '';
+      document.getElementById('overlay-text-display').innerText = '';
+      document.getElementById('modal-edit-video').classList.remove('hidden');
+    }
+
+    function backToCreateModal() {
+      document.getElementById('modal-edit-video').classList.add('hidden');
+      openCreateModal('video');
+    }
+
+    function updateOverlayText(val) {
+      document.getElementById('overlay-text-display').innerText = val;
+    }
+
+    function setTextColor(color) {
+      document.getElementById('overlay-text-display').style.color = color;
+    }
+
+    function goToFinalPostModal() {
+      document.getElementById('modal-edit-video').classList.add('hidden');
+      document.getElementById('final-thumb-preview').src = tempVideoUrl;
+      document.getElementById('final-caption-input').value = document.getElementById('video-overlay-input').value || 'Meu vídeo incrível 🎬';
+      document.getElementById('final-hashtags-input').value = '#foryou #viral #vidstream';
+      document.getElementById('modal-final-post').classList.remove('hidden');
+    }
+
+    function backToEditorModal() {
+      document.getElementById('modal-final-post').classList.add('hidden');
+      document.getElementById('modal-edit-video').classList.remove('hidden');
+    }
+
+    function publishFinalVideo() {
+      const caption = document.getElementById('final-caption-input').value.trim() || 'Meu vídeo 🚀';
+      const hashtags = document.getElementById('final-hashtags-input').value.trim();
+      const finalCaption = `${caption} ${hashtags}`;
+
+      videos.unshift({ 
+        id: Date.now(), 
+        author: currentUser.name, 
+        handle: currentUser.handle, 
+        avatar: currentUser.avatar, 
+        url: tempVideoUrl, 
+        caption: finalCaption, 
+        likesCount: 0, 
+        liked: false, 
+        saved: false, 
+        following: false, 
+        comments: [] 
+      });
+
+      saveVideosStorage();
+      document.getElementById('modal-final-post').classList.add('hidden');
+      switchTab('feed');
+      renderFeed();
+      renderProfile();
+      showToast('Publicado com sucesso! 🚀');
+    }
+
+    function handleSearch(q) {
+      searchQuery = q.trim().toLowerCase();
+      switchTab('feed');
+      renderFeed();
+    }
+
+    function renderFeed() {
+      const container = document.getElementById('video-container');
+      
+      let filtered = videos;
+      if (searchQuery) {
+        if (searchQuery.startsWith('@')) {
+          filtered = videos.filter(v => v.handle.toLowerCase().includes(searchQuery));
+        } else {
+          filtered = videos.filter(v => v.caption.toLowerCase().includes(searchQuery) || v.author.toLowerCase().includes(searchQuery));
+        }
+      }
+
+      if (filtered.length === 0) {
+        container.innerHTML = `<div class="w-full h-full flex flex-col items-center justify-center p-6 text-center text-slate-500"><i data-lucide="video-off" class="w-12 h-12 mb-2 text-brand"></i><p class="text-sm font-semibold">Nenhum conteúdo publicado.</p></div>`;
+        lucide.createIcons(); return;
+      }
+      container.innerHTML = filtered.map(v => `
+        <div class="w-full h-full snap-start relative flex items-center justify-center bg-black">
+          <video src="${v.url}" preload="auto" loop playsinline autoplay controls webkit-playsinline class="w-full h-full object-contain"></video>
+          <div class="absolute right-3 bottom-16 flex flex-col items-center gap-4 z-20">
+            <div class="relative mb-2 flex flex-col items-center">
+              <img src="${v.avatar}" class="w-10 h-10 rounded-full border-2 border-white object-cover shadow-lg bg-slate-800">
+              <button onclick="toggleFollow(${v.id})" class="absolute -bottom-2 bg-brand text-white rounded-full p-1 shadow"><i data-lucide="${v.following ? 'check' : 'plus'}" class="w-3 h-3"></i></button>
+            </div>
+            
+            ${v.following ? `
+              <button onclick="openChat('${v.author}', '${v.handle}', '${v.avatar}')" class="p-2.5 rounded-full bg-brand text-white shadow-lg transition hover:scale-105" title="Conversar">
+                <i data-lucide="message-square" class="w-5 h-5"></i>
+              </button>
+            ` : ''}
+
+            <button onclick="toggleLike(${v.id})" class="flex flex-col items-center"><div class="p-2.5 rounded-full bg-black/40"><i data-lucide="heart" class="w-7 h-7 ${v.liked ? 'text-pink-500 fill-pink-500' : 'text-white'}"></i></div><span class="text-[11px] font-bold text-white">${v.likesCount}</span></button>
+            <button onclick="openComments(${v.id})" class="flex flex-col items-center"><div class="p-2.5 rounded-full bg-black/40"><i data-lucide="message-circle" class="w-7 h-7 text-white"></i></div><span class="text-[11px] font-bold text-white">${v.comments.length}</span></button>
+            <button onclick="toggleSave(${v.id})" class="flex flex-col items-center"><div class="p-2.5 rounded-full bg-black/40"><i data-lucide="bookmark" class="w-7 h-7 ${v.saved ? 'text-amber-400 fill-amber-400' : 'text-white'}"></i></div><span class="text-[11px] font-bold text-white">Salvar</span></button>
+          </div>
+          <div class="absolute left-3 bottom-16 right-20 z-20 pointer-events-none">
+            <h4 class="font-bold text-sm text-white">${v.author} <span class="text-xs text-slate-400 font-normal">${v.handle}</span></h4>
+            <p class="text-xs text-slate-100 mt-1">${v.caption}</p>
+          </div>
+        </div>
+      `).join('');
+      lucide.createIcons();
+    }
+
+    function openChat(name, handle, avatar) {
+      document.getElementById('chat-user-name').innerText = name;
+      document.getElementById('chat-user-handle').innerText = handle;
+      document.getElementById('chat-user-avatar').src = avatar;
+      openModal('modal-chat');
+    }
+
+    function handleSendChatMessage(e) {
+      e.preventDefault();
+      const input = document.getElementById('chat-input-message');
+      const text = input.value.trim();
+      if (!text) return;
+
+      const container = document.getElementById('chat-messages-container');
+      container.innerHTML += `
+        <div class="flex justify-end">
+          <div class="bg-brand text-white p-2.5 rounded-xl max-w-[80%] font-medium">
+            ${text}
+          </div>
+        </div>
+      `;
+      input.value = '';
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function openComments(id) {
+      currentCommentVideoId = id;
+      renderCommentsList();
+      openModal('modal-comments');
+    }
+
+    function renderCommentsList() {
+      const v = videos.find(item => item.id === currentCommentVideoId);
+      const listContainer = document.getElementById('comments-list');
+      if (!v || v.comments.length === 0) {
+        listContainer.innerHTML = '<p class="text-slate-500 text-center py-4">Sem comentários ainda.</p>';
+        return;
+      }
+      listContainer.innerHTML = v.comments.map((c, index) => `
+        <div class="bg-slate-800 p-2.5 rounded-xl flex items-center justify-between gap-2">
+          <div class="flex-1">
+            <span class="font-bold text-brand">${c.user}: </span>
+            <span class="text-slate-200">${c.content}</span>
+          </div>
+          <button onclick="deleteComment(${index})" class="text-slate-400 hover:text-red-400 p-1.5 transition" title="Deletar Comentário">
+            <i data-lucide="trash-2" class="w-4 h-4"></i>
+          </button>
+        </div>
+      `).join('');
+      lucide.createIcons();
+    }
+
+    function deleteComment(index) {
+      const v = videos.find(item => item.id === currentCommentVideoId);
+      if (v) {
+        v.comments.splice(index, 1);
+        saveVideosStorage();
+        renderCommentsList();
+        renderFeed();
+        showToast('Comentário deletado.');
+      }
+    }
+
+    function handleAddComment(e) {
+      e.preventDefault();
+      const input = document.getElementById('comment-input');
+      const v = videos.find(item => item.id === currentCommentVideoId);
+      if (v && input.value.trim()) {
+        v.comments.push({ user: currentUser.name, content: input.value.trim() });
+        saveVideosStorage();
+        input.value = '';
+        renderCommentsList();
+        renderFeed();
+      }
+    }
+
+    function toggleLike(id) { 
+      const v = videos.find(i => i.id === id); 
+      if(v){ 
+        v.liked = !v.liked; 
+        v.likesCount += v.liked ? 1 : -1; 
+        saveVideosStorage();
+        renderFeed(); 
+        renderProfile(); 
+      } 
+    }
+
+    function toggleSave(id) { 
+      const v = videos.find(i => i.id === id); 
+      if(v){ 
+        v.saved = !v.saved; 
+        saveVideosStorage();
+        showToast(v.saved ? 'Salvo!' : 'Removido.'); 
+        renderFeed(); 
+        renderProfile(); 
+      } 
+    }
+
+    function toggleFollow(id) { 
+      const v = videos.find(i => i.id === id); 
+      if(v){ 
+        v.following = !v.following; 
+        saveVideosStorage();
+        renderFeed();
+        showToast(v.following ? `A seguir ${v.author}! Chat desbloqueado 💬` : 'Deixaste de seguir.');
+      } 
+    }
+
+    function switchTab(tab) {
+      ['feed', 'profile', 'live'].forEach(t => document.getElementById(`view-${t}`).classList.add('hidden'));
+      ['feed', 'live', 'profile'].forEach(t => document.getElementById(`nav-${t}`).className = 'flex flex-col items-center gap-0.5 text-slate-500 transition');
+      document.getElementById(`view-${tab}`).classList.remove('hidden');
+      document.getElementById(`nav-${tab}`).className = 'flex flex-col items-center gap-0.5 text-brand transition';
+      if(tab === 'feed') renderFeed();
+      if(tab === 'profile') renderProfile();
+    }
+
+    function switchProfileTab(tab) {
+      activeProfileTab = tab;
+      ['my-videos', 'liked-videos', 'saved-videos'].forEach(t => document.getElementById(`tab-btn-${t}`).className = 'pb-2');
+      document.getElementById(`tab-btn-${tab}`).className = 'pb-2 border-b-2 border-brand text-brand font-bold';
+      renderProfile();
+    }
+
+    function renderProfile() {
+      document.getElementById('profile-name').innerText = currentUser.name;
+      document.getElementById('profile-handle').innerText = currentUser.handle;
+      document.getElementById('profile-avatar').src = currentUser.avatar;
+      document.getElementById('profile-bio').innerText = currentUser.bio;
+      document.getElementById('profile-following-count').innerText = currentUser.following;
+      document.getElementById('profile-likes-count').innerText = videos.reduce((acc, v) => acc + v.likesCount, 0);
+
+      let list = videos.filter(v => {
+        if (activeProfileTab === 'my-videos') return v.handle === currentUser.handle;
+        if (activeProfileTab === 'liked-videos') return v.liked;
+        if (activeProfileTab === 'saved-videos') return v.saved;
+        return false;
+      });
+
+      document.getElementById('profile-videos-grid').innerHTML = list.length === 0 ? '<p class="col-span-3 text-xs text-slate-500 text-center py-8">Nenhum conteúdo.</p>' : list.map(v => `<div class="aspect-[3/4] bg-slate-900 rounded-lg overflow-hidden relative"><video src="${v.url}" class="w-full h-full object-cover"></video></div>`).join('');
+      lucide.createIcons();
+    }
+
+    function setTheme(name) { document.getElementById('app-body').className = `bg-black text-slate-100 flex flex-col h-[100dvh] overflow-hidden select-none ${name}`; closeModal('modal-settings'); showToast('Tema alterado!'); }
+    function showToast(msg) { const t = document.getElementById('toast'); t.innerText = msg; t.classList.remove('opacity-0'); setTimeout(() => t.classList.add('opacity-0'), 2500); }
+    function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+    function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+  </script>
+</body>
+</html>
